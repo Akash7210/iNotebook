@@ -8,13 +8,13 @@ var jwt = require('jsonwebtoken');
 const JWT_SECRET ='Akashisagood@boy';
 
 
-// Create a user using POST "/api/auth", doesn't require authentication . No login required
+// Create a user using POST "/api/auth/createuser", doesn't require authentication . No login required
 router.post(
-  "/createuser",
+  '/createuser',
   [
-    body("name", "Enter a valid name").isLength({ min: 3 }),
-    body("email", "Enter a valid Email").isEmail(),
-    body("password", "Password must have a minimum of 5 characters").isLength({
+    body('name', 'Enter a valid name').isLength({ min: 3 }),
+    body('email', 'Enter a valid Email').isEmail(),
+    body('password', 'Password must have a minimum of 5 characters').isLength({
       min: 5,
     }),
   ],
@@ -66,4 +66,45 @@ router.post(
   }
 );
 
-module.exports = router;
+//Authenticate User using :POST "/apt/auth/login".No login required 
+router.post('/login', [
+    body('email', 'Enter a valid Email').isEmail(),
+    body('password','Passwword cannot be blank').exists(),
+  ],async(req,res)=>{
+
+     //If there are error , return Bad request and the errors.
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const{email,password} = req.body;
+    try{
+      let user = await User.findOne({email});
+      if(!user){
+        return res.status(400).json({error:"Please try to login with correct username and password"});
+      }
+
+      const passwordCompare = await bcrypt.compare(password,user.password);
+      if(!passwordCompare){
+        return res.status(400).json({error: "Please try to login with correct username and password"});
+      }
+
+      const data = {
+        user:{
+          id: user.id
+         
+        }
+      }
+       const authtoken = jwt.sign(data,JWT_SECRET);
+       res.json({authtoken})
+
+    }catch(error){
+      console.error(error.message);
+      res.status(500).send("Internal server error occured");
+
+    }
+
+  })
+
+module.exports = router
