@@ -4,11 +4,12 @@ const router = express.Router();
 const { body, validationResult } = require("express-validator");
 const bcrypt = require('bcryptjs');
 var jwt = require('jsonwebtoken');
+var fetchuser = require('../middleware/fetchUser');
 
 const JWT_SECRET ='Akashisagood@boy';
 
 
-// Create a user using POST "/api/auth/createuser", doesn't require authentication . No login required
+//Route 1 Create a user using POST "/api/auth/createuser", doesn't require authentication . No login required
 router.post(
   '/createuser',
   [
@@ -66,7 +67,7 @@ router.post(
   }
 );
 
-//Authenticate User using :POST "/apt/auth/login".No login required 
+// Route 2 :Authenticate User using :POST "/apt/auth/login".No login required 
 router.post('/login', [
     body('email', 'Enter a valid Email').isEmail(),
     body('password','Passwword cannot be blank').exists(),
@@ -106,5 +107,18 @@ router.post('/login', [
     }
 
   })
+  // Route 3 : Get Login User details  :POST "/apt/auth/getuser". Login required 
+  router.post('/getuser',fetchuser, async(req,res)=>{
+  try{
+    userId = res.user.id;
+    const user = await User.findById(userId).select("-password")
+    res.send(user)
+
+  }
+  catch(error){
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+})
 
 module.exports = router
